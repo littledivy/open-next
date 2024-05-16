@@ -685,7 +685,7 @@ function compileCache() {
       entryPoints: [path.join(__dirname, "adapters", "cache.js")],
       outfile,
       target: ["node18"],
-      format: "cjs",
+      format: "esm",
       banner: {
         js: [
           `globalThis.disableIncrementalCache = ${

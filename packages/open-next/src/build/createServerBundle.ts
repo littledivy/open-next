@@ -113,6 +113,17 @@ export async function createServerBundle(
   });
 }
 
+function createDenoJson(outputDir: string, packagePath: string) {
+  const denoConfig = {
+    unstable: ["fs", "byonm"],
+  };
+
+  const denoJsonPath = path.join(outputDir, packagePath, "deno.json");
+  fs.writeFileSync(denoJsonPath, JSON.stringify(denoConfig, null, 2));
+
+  return denoJsonPath;
+}
+
 async function generateBundle(
   name: string,
   config: OpenNextConfig,
@@ -138,6 +149,8 @@ async function generateBundle(
     path.join(outputDir, ".build", "cache.cjs"),
     path.join(outputPath, packagePath, "cache.cjs"),
   );
+
+  createDenoJson(outputPath, packagePath);
 
   // Bundle next server if necessary
   const isBundled = fnOptions.experimentalBundledNextServer ?? false;
@@ -234,6 +247,8 @@ async function generateBundle(
       outfile: path.join(outputPath, packagePath, "index.mjs"),
       banner: {
         js: [
+          "import process from 'node:process';",
+          "import { Buffer } from 'node:buffer';",
           `globalThis.monorepoPackagePath = "${packagePath}";`,
           "import { createRequire as topLevelCreateRequire } from 'module';",
           "const require = topLevelCreateRequire(import.meta.url);",
@@ -249,6 +264,11 @@ async function generateBundle(
       },
     },
     options,
+  );
+  // Copy index.mjs to index.ts for Deno.
+  fs.copyFileSync(
+    path.join(outputPath, packagePath, "index.mjs"),
+    path.join(outputPath, packagePath, "index.ts"),
   );
 
   if (isMonorepo) {
